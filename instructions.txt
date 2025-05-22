@@ -1,0 +1,86 @@
+# create s3 bucket
+aws s3api create-bucket --bucket shakthi-buckets2 --region us-east-1
+
+# Disable versioning
+aws s3api put-bucket-versioning \
+  --bucket shakthi-buckets2 \
+  --versioning-configuration Status=Suspended
+
+# Make the bucket publicly accessible
+aws s3api put-bucket-policy --bucket shakthi-buckets2  --policy '{
+  "Version": "2012-10-17",
+  "Statement": [{
+    "Sid": "PublicReadGetObject",
+    "Effect": "Allow",
+    "Principal": "*",
+    "Action": "s3:GetObject",
+    "Resource": "arn:aws:s3:::shakthi-buckets2/*"
+  }]
+}'
+
+# if the above command fails 
+aws s3api delete-public-access-block --bucket shakthi-buckets2
+
+
+# execute this again
+aws s3api put-bucket-policy --bucket shakthi-buckets2 --policy '{
+  "Version": "2012-10-17",
+  "Statement": [{
+    "Sid": "PublicReadGetObject",
+    "Effect": "Allow",
+    "Principal": "*",
+    "Action": "s3:GetObject",
+    "Resource": "arn:aws:s3:::shakthi-buckets2/*"
+  }]
+}'
+
+====================================================================
+
+RDS
+
+aws rds create-db-instance \
+  --db-instance-identifier mydb \
+  --db-instance-class db.t3.micro \
+  --engine mysql \
+  --master-username admin \
+  --master-user-password admin123 \
+  --allocated-storage 20 \
+  --backup-retention-period 0 \
+  --no-deletion-protection \
+  --publicly-accessible \
+  --region us-east-1
+
+=============================================
+
+security group
+
+GROUP_ID=$(aws ec2 create-security-group \
+  --group-name public-access \
+  --description "Public access SG" \
+  --query 'GroupId' \
+  --output text)
+
+
+aws ec2 authorize-security-group-ingress \
+  --group-id $GROUP_ID \
+  --protocol tcp \
+  --port 22 \
+  --cidr 0.0.0.0/0
+
+aws ec2 authorize-security-group-ingress \
+  --group-id $GROUP_ID \
+  --protocol tcp \
+  --port 27017 \
+  --cidr 0.0.0.0/0
+
+===================================
+
+IAM user
+
+aws iam create-user --user-name security-auditor
+
+aws iam attach-user-policy \
+  --user-name security-auditor \
+  --policy-arn arn:aws:iam::aws:policy/SecurityAudit
+
+  
